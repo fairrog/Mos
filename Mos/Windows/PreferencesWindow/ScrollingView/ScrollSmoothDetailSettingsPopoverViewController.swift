@@ -1,6 +1,6 @@
 import Cocoa
 
-class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOptionsContextProviding {
+class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOptionsContextProviding, NSTextFieldDelegate {
 
     @IBOutlet weak var verticalSmoothCheckBox: NSButton?
     @IBOutlet weak var horizontalSmoothCheckBox: NSButton?
@@ -97,6 +97,7 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
         deadZoneInput.controlSize = .small
         deadZoneInput.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         (deadZoneInput.cell as? NSTextFieldCell)?.sendsActionOnEndEditing = true
+        deadZoneInput.delegate = self
         deadZoneInput.target = self
         deadZoneInput.action = #selector(deadZoneInputChanged(_:))
         deadZoneInput.translatesAutoresizingMaskIntoConstraints = false
@@ -133,6 +134,10 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
     }
 
     private func setDeadZone(_ value: Double) {
+        guard value.isFinite, value > 0 else {
+            syncViewWithOptions()
+            return
+        }
         let clampedValue = min(
             max(value, ScrollDeadZoneLimits.minimum),
             ScrollDeadZoneLimits.maximum
@@ -154,5 +159,12 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
         deadZoneStepper.isEnabled = isDeadZoneEnabled
         deadZoneInput.stringValue = String(format: "%.2f", scroll.deadZone)
         deadZoneStepper.doubleValue = scroll.deadZone
+    }
+
+    func controlTextDidEndEditing(_ notification: Notification) {
+        guard let field = notification.object as? NSTextField, field === deadZoneInput else {
+            return
+        }
+        setDeadZone(field.doubleValue)
     }
 }
