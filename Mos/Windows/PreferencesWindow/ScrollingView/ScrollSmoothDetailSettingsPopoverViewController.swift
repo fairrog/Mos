@@ -19,6 +19,7 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
         super.viewDidLoad()
         configureDeadZoneControls()
         syncViewWithOptions()
+        updatePreferredContentSize()
     }
 
     override func viewWillAppear() {
@@ -32,7 +33,11 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
     }
 
     override func updatePreferredContentSize() {
-        preferredContentSize = NSSize(width: 260, height: 156)
+        let contentSize = NSSize(width: 280, height: 190)
+        if view.frame.size != contentSize {
+            view.setFrameSize(contentSize)
+        }
+        preferredContentSize = contentSize
     }
 
     @IBAction func verticalSmoothToggle(_ sender: NSButton) {
