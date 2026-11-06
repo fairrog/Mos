@@ -43,16 +43,20 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
-            PRODUCT_BUNDLE_IDENTIFIER=me.fairrog.MosATASFork \
-            PRODUCT_NAME="Mos ATAS Fork" \
             ARCHS="arm64 x86_64" \
             ONLY_ACTIVE_ARCH=NO \
             build
 
       - name: Sign and package
         run: |
+          BUILT_APP="$RUNNER_TEMP/DerivedDataRelease/Build/Products/Release/Mos.app"
           APP_PATH="$RUNNER_TEMP/DerivedDataRelease/Build/Products/Release/Mos ATAS Fork.app"
-          test -d "$APP_PATH"
+          test -d "$BUILT_APP"
+
+          mv "$BUILT_APP" "$APP_PATH"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier me.fairrog.MosATASFork" "$APP_PATH/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Mos ATAS Fork" "$APP_PATH/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Mos ATAS Fork" "$APP_PATH/Contents/Info.plist"
 
           codesign --force --deep --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
