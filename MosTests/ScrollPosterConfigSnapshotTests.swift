@@ -37,4 +37,36 @@ final class ScrollPosterConfigSnapshotTests: XCTestCase {
         XCTAssertTrue(snap.simTrackpadEnabled, "simTrackpadEnabled 应为捕获时的 true")
         XCTAssertEqual(snap.deadZone, 7.0, "deadZone 应为捕获时的 7.0")
     }
+
+    func testConfigSnapshot_usesPerApplicationDeadZone() {
+        let application = Application(path: "/Applications/ATAS X.app")
+        application.inherit = false
+        application.scroll.deadZone = 0.3
+        ScrollCore.shared.application = application
+        Options.shared.scroll.deadZone = 1.0
+
+        ScrollPoster.shared.captureConfigSnapshotForTests()
+
+        XCTAssertEqual(
+            ScrollPoster.shared.configSnapshotForTests.deadZone,
+            0.3,
+            "未继承配置的应用应使用自己的死区"
+        )
+    }
+
+    func testConfigSnapshot_inheritedApplicationUsesGlobalDeadZone() {
+        let application = Application(path: "/Applications/Example.app")
+        application.inherit = true
+        application.scroll.deadZone = 0.2
+        ScrollCore.shared.application = application
+        Options.shared.scroll.deadZone = 0.7
+
+        ScrollPoster.shared.captureConfigSnapshotForTests()
+
+        XCTAssertEqual(
+            ScrollPoster.shared.configSnapshotForTests.deadZone,
+            0.7,
+            "继承配置的应用应使用全局死区"
+        )
+    }
 }

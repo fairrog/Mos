@@ -483,14 +483,17 @@ private extension ScrollPoster {
     /// 主线程读取当前 (全局 / 例外应用) 配置存入快照。调用方须持有 stateLock。
     func captureConfigSnapshotLocked() {
         let simTrackpad: Bool
+        let deadZone: Double
         if let application = ScrollCore.shared.application, !application.inherit {
             simTrackpad = application.scroll.smoothSimTrackpad
+            deadZone = application.scroll.deadZone
         } else {
             simTrackpad = Options.shared.scroll.smoothSimTrackpad
+            deadZone = Options.shared.scroll.deadZone
         }
         config = ConfigSnapshot(
             simTrackpadEnabled: simTrackpad,
-            deadZone: Options.shared.scroll.deadZone
+            deadZone: deadZone
         )
     }
 

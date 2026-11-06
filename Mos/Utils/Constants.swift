@@ -89,6 +89,12 @@ enum ScrollDurationLimits {
     static let simulateTrackpadDefault: Double = 4.75
 }
 
+enum ScrollDeadZoneLimits {
+    static let minimum: Double = 0.05
+    static let maximum: Double = 10.0
+    static let increment: Double = 0.05
+}
+
 /// 默认设置项
 // 常规
 class OPTIONS_GENERAL_DEFAULT {

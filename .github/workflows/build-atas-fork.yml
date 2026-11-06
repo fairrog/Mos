@@ -1,0 +1,86 @@
+name: Build Mos ATAS Fork
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/per-app-dead-zone
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Run scroll snapshot tests
+        run: |
+          xcodebuild \
+            -project Mos.xcodeproj \
+            -scheme Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedDataTests" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            test \
+            -only-testing:MosTests/ScrollPosterConfigSnapshotTests
+
+      - name: Build fork
+        run: |
+          xcodebuild \
+            -project Mos.xcodeproj \
+            -scheme Debug \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedDataRelease" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM="" \
+            PRODUCT_BUNDLE_IDENTIFIER=me.fairrog.MosATASFork \
+            PRODUCT_NAME="Mos ATAS Fork" \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Sign and package
+        run: |
+          APP_PATH="$RUNNER_TEMP/DerivedDataRelease/Build/Products/Release/Mos ATAS Fork.app"
+          test -d "$APP_PATH"
+
+          codesign --force --deep --sign - "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+          mkdir -p dist
+          ditto -c -k --norsrc --noextattr --keepParent \
+            "$APP_PATH" \
+            "dist/Mos-ATAS-Fork-${GITHUB_SHA::7}.zip"
+
+          cat > dist/README.txt <<'EOF'
+          Mos ATAS Fork
+
+          1. Quit the official Mos before launching this build.
+          2. Move "Mos ATAS Fork.app" to Applications.
+          3. If macOS blocks the ad-hoc signed build, right-click the app and choose Open.
+          4. In Mos, select ATAS X and open the advanced settings beside Smooth Scrolling.
+          5. Set Dead Zone to 0.30, enable Simulate Trackpad, and test a light scroll.
+
+          This build has bundle identifier me.fairrog.MosATASFork so it can coexist
+          with the official Mos installation, but only one Mos event tap should run
+          at a time.
+          EOF
+
+      - name: Upload installable archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mos-ATAS-Fork-${{ github.sha }}
+          path: |
+            dist/Mos-ATAS-Fork-*.zip
+            dist/README.txt
+          if-no-files-found: error
